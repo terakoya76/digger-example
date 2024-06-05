@@ -1,0 +1,4 @@
+auto_merge: true
+projects:
+- name: project_b
+  dir: ./environments/project_b
