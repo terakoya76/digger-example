@@ -1,0 +1,97 @@
+name: digger-shared
+
+on:
+  workflow_call:
+    inputs:
+      aws_profile_name:
+        required: true
+        type: string
+      digger_filename:
+        required: true
+        type: string
+      terraform_version:
+        required: true
+        type: string
+    secrets:
+      AWS_IAM_ROLE_ARN:
+        required: true
+      GCP_WORKLOAD_IDENTITY_PROVIDER:
+        required: true
+      GCP_SERVICE_ACCOUNT:
+        required: true
+
+permissions:
+  contents: write      # required to merge PRs
+  actions: write       # required for plan persistence
+  id-token: write      # required for workload-identity-federation
+  pull-requests: write # required to post PR comments
+  statuses: write      # required to validate combined PR status
+
+jobs:
+  digger-shared:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Expand digger config files to root level
+        run: find ./config -mindepth 1 -maxdepth 1 -exec mv -t. -- {} +
+
+      # - name: Check approval
+      #   id: check_approval
+      #   if: github.event_name == 'issue_comment'
+      #   run: |
+      #     APPROVAL_STATUS=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}/reviews | jq '[.[] | select(.state == "APPROVED")] | length > 0')
+      #     echo "is_approved=$APPROVAL_STATUS" >> $GITHUB_OUTPUT
+
+      # - uses: peter-evans/create-or-update-comment@v4
+      #   if: github.event_name == 'issue_comment' && contains(github.event.comment.body, 'apply') && steps.check_approval.outputs.is_approved == 'false'
+      #   with:
+      #     issue-number: ${{ github.event.issue.number }}
+      #     body: Approve is required to run `digger apply`
+
+      # - name: Abort workflow when not approved
+      #   if: github.event_name == 'issue_comment' && contains(github.event.comment.body, 'apply') && steps.check_approval.outputs.is_approved == 'false'
+      #   run: exit 1
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ap-northeast-1
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+
+      # cf.
+      # * https://github.com/aws-actions/configure-aws-credentials/issues/112
+      # * https://miraitranslate-tech.hatenablog.jp/entry/2022/02/15/164056
+      - name: Configure AWS Profile
+        run: |
+          mkdir -p ~/.aws
+          cat <<EOS >> ~/.aws/credentials
+          [${{ inputs.aws_profile_name }}]
+          aws_access_key_id = ${{ env.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key = ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws_session_token = ${{ env.AWS_SESSION_TOKEN }}
+          EOS
+
+          cat <<EOS >> ~/.aws/config
+          [${{ inputs.aws_profile_name }}]
+          region = ap-northeast-1
+          EOS
+
+      - name: Digger for AWS/GCP
+        uses: diggerhq/digger@v0.5.0
+        with:
+          # for configuring AWS Profile
+          # cf. https://github.com/aws-actions/configure-aws-credentials/issues/112
+          # setup-aws: true
+          # aws-region: ap-northeast-1
+          # aws-role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          setup-google-cloud: true
+          google-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          google-service-account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          digger-filename: ${{ inputs.digger_filename }}
+          no-backend: true
+          setup-terraform: true
+          terraform-version: ${{ inputs.terraform_version }}
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AWS_PROFILE: ${{ inputs.aws_profile_name }}

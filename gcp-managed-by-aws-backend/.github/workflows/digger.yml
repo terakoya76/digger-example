@@ -1,0 +1,34 @@
+name: digger
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - environments/**
+  issue_comment:
+    types: [created]
+    if: contains(github.event.comment.body, 'digger')
+
+jobs:
+  digger-project-a:
+    uses: ./.github/workflows/digger-shared.yml
+    with:
+      aws_profile_name: account-a
+      digger_filename: project_a.yml
+      terraform_version: 1.8.4
+    secrets:
+      AWS_IAM_ROLE_ARN: arn:aws:iam::000000000001:role/terraform # creating from outside terraform management
+      GCP_WORKLOAD_IDENTITY_PROVIDER: projects/<project_number>/locations/global/workloadIdentityPools/<pool_id>/providers/<provider_id> # from environments/project_a/cicd.tf
+      GCP_SERVICE_ACCOUNT: terraform # from environments/project_a/cicd.tf
+
+  digger-project-b:
+    uses: ./.github/workflows/digger-shared.yml
+    with:
+      aws_profile_name: account-b
+      digger_filename: project_b.yml
+      terraform_version: 1.8.4
+    secrets:
+      AWS_IAM_ROLE_ARN: arn:aws:iam::000000000002:role/terraform # creating from outside terraform management
+      GCP_WORKLOAD_IDENTITY_PROVIDER: projects/<project_number>/locations/global/workloadIdentityPools/<pool_id>/providers/<provider_id> # from environments/project_b/cicd.tf
+      GCP_SERVICE_ACCOUNT: terraform # from environments/project_b/cicd.tf
