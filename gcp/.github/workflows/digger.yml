@@ -18,7 +18,7 @@ jobs:
       terraform_version: 1.8.4
     secrets:
       GCP_WORKLOAD_IDENTITY_PROVIDER: projects/<project_number>/locations/global/workloadIdentityPools/<pool_id>/providers/<provider_id> # from environments/project_a/cicd.tf
-      GCP_SERVICE_ACCOUNT: terraform # from environments/project_a/cicd.tf
+      GCP_SERVICE_ACCOUNT: terraform@<project_id>.iam.gserviceaccount.com # from environments/project_a/cicd.tf
       GCP_GCS_BUCKET: my-example-bucket # from environments/project_a/terraform.tf
 
   digger-project-b:
@@ -28,5 +28,5 @@ jobs:
       terraform_version: 1.8.4
     secrets:
       GCP_WORKLOAD_IDENTITY_PROVIDER: projects/<project_number>/locations/global/workloadIdentityPools/<pool_id>/providers/<provider_id> # from environments/project_b/cicd.tf
-      GCP_SERVICE_ACCOUNT: terraform # from environments/project_b/cicd.tf
+      GCP_SERVICE_ACCOUNT: terraform@<project_id>.iam.gserviceaccount.com # from environments/project_b/cicd.tf
       GCP_GCS_BUCKET: my-example-bucket # from environments/project_b/terraform.tf
