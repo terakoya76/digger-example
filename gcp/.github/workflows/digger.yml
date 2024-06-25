@@ -11,7 +11,7 @@ on:
 
 jobs:
   digger-project-a:
-    if: (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'digger')) || github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'digger'))
     uses: ./.github/workflows/digger-shared.yml
     with:
       digger_filename: project_a.yml
@@ -22,7 +22,7 @@ jobs:
       GCP_GCS_BUCKET: my-example-bucket # from environments/project_a/terraform.tf
 
   digger-project-b:
-    if: (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'digger')) || github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'digger'))
     uses: ./.github/workflows/digger-shared.yml
     with:
       digger_filename: project_b.yml
