@@ -8,10 +8,10 @@ on:
       - environments/**
   issue_comment:
     types: [created]
-    if: contains(github.event.comment.body, 'digger')
 
 jobs:
   digger-account-a:
+    if: (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'digger')) || github.event_name == 'pull_request'
     uses: ./.github/workflows/digger-shared.yml
     with:
       aws_profile_name: account-a
@@ -21,6 +21,7 @@ jobs:
       AWS_IAM_ROLE_ARN: arn:aws:iam::000000000001:role/terraform # from environments/account_a/cicd.tf
 
   digger-account-b:
+    if: (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'digger')) || github.event_name == 'pull_request'
     uses: ./.github/workflows/digger-shared.yml
     with:
       aws_profile_name: account-b
